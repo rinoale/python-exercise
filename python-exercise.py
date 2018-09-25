@@ -12,3 +12,7 @@ print(num, type(num))
 print(name, type(name))
 
 print('Hi', 'Mike', sep=',', end='\n')
+
+print(17//3)
+print(17%3)
+print(5**2)

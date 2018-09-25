@@ -162,3 +162,8 @@ if is_ok:
     print('OK!')
 else:
     print('No!')
+
+is_empty = None
+
+if is_empty is None:
+    print('None')

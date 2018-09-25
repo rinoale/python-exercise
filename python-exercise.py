@@ -59,6 +59,10 @@ family = 'Sakai'
 # print('My name is {name} {family}. watashiha {family} {name}'.format(name, family))
 # upper example was incorrect
 
+apples = 4
+
+print(f"I have {apples} apples")
+
 n= [1,2,3,4,5,6,7,8,9,10]
 
 print(n[::2])
@@ -69,3 +73,10 @@ s = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 s[2:5] = ['C', 'D', 'E']
 
 print(s)
+
+r = [1,2,3,4,5,1,2,3]
+
+if 100 in r:
+    print('exist')
+else:
+    print('not exist')

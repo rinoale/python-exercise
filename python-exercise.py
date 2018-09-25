@@ -155,3 +155,10 @@ print(s-b)
 print(s&b)
 print(s|b)
 print(s^b)
+
+is_ok = 0
+# 0.0, 0, '', [], (), {}, set() and False are false
+if is_ok:
+    print('OK!')
+else:
+    print('No!')

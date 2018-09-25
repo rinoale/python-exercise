@@ -140,3 +140,18 @@ b = 200
 a, b = b, a
 
 print(a, b)
+
+d = {'x': 10, 'y': 20}
+d['z'] = 30
+
+print(type(d))
+print(d)
+
+s = {1,2,3,4,4,4,5,6}
+
+b = {2,3,3,6,7}
+
+print(s-b)
+print(s&b)
+print(s|b)
+print(s^b)

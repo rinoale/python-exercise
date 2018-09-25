@@ -10,3 +10,5 @@ name = 'Mike'
 
 print(num, type(num))
 print(name, type(name))
+
+print('Hi', 'Mike', sep=',', end='\n')

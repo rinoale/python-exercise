@@ -58,3 +58,8 @@ name = 'Jun'
 family = 'Sakai'
 # print('My name is {name} {family}. watashiha {family} {name}'.format(name, family))
 # upper example was incorrect
+
+n= [1,2,3,4,5,6,7,8,9,10]
+
+print(n[::2])
+print(n[::-1])

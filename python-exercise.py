@@ -94,3 +94,27 @@ y = x[:]
 x[0] = 100
 print('x = ', x)
 print('y = ', y)
+
+X = 20
+Y = X
+Y = 5
+print(id(X))
+print(id(Y))
+print(X)
+print(Y)
+
+Z = [1, 2, 3]
+C = Z
+Z[0] = 4
+
+print(id(Z))
+print(id(C))
+print(Z)
+print(C)
+
+seat = []
+
+min = 0
+max = 5
+
+print(min <= len(seat) < max)

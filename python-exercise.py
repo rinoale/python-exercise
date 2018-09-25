@@ -118,3 +118,25 @@ min = 0
 max = 5
 
 print(min <= len(seat) < max)
+
+t = (1, 2, 3, 4, 5)
+
+print(type(t))
+
+t1 = 1,
+
+print(type(t1))
+
+i = 10
+j = 20
+tmp = i
+i = j
+j = tmp
+
+
+a = 100
+b = 200
+
+a, b = b, a
+
+print(a, b)

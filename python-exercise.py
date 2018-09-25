@@ -45,3 +45,16 @@ print(word[:2])
 word = 'j' + word[1:]
 
 print(word)
+
+print('a is {}'.format('a'))
+
+print('a is {} {} {}'.format(1, 2, 3))
+
+print('My name is {0} {1}'.format('Jun', 'Sakai'))
+
+print('My name is {name} {family}. watashiha {family} {name}'.format(name='Jun', family='Sakai'))
+
+name = 'Jun'
+family = 'Sakai'
+# print('My name is {name} {family}. watashiha {family} {name}'.format(name, family))
+# upper example was incorrect

@@ -26,3 +26,10 @@ print(type(g))
 g = (i for i in range(10))
 
 print(type(g))
+
+g = tuple(i for i in range(10) if i%2 == 0)
+
+print(type(g))
+
+for i in g:
+    print(i)

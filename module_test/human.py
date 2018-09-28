@@ -1,0 +1,2 @@
+def sing():
+    return 'sing'

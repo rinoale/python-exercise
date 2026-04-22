@@ -3,7 +3,7 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from quiz_player import QuizPlayer, check_eval, check_code, cyan
+from quiz_player import QuizPlayer, check_code, cyan
 
 player = QuizPlayer("Lesson 16: Standard Library Tour")
 
@@ -31,11 +31,18 @@ player.explain("collections — specialized containers", f"""\
       Point = namedtuple("Point", "x y")
       p = Point(3, 4); p.x, p.y""")
 
+def _check_counter(ns):
+    r = ns.get("result")
+    if r == "a":
+        return True, f"got {r!r}"
+    return False, f"got {r!r}; expected 'a' — assign to `result`"
+
 player.quiz(
     'Use Counter to find the most common character in "abracadabra".\n'
-    "  Expected: the string \"a\".  Type an expression returning that character.",
-    check_eval("a"),
-    hint='Counter("abracadabra").most_common(1)[0][0]',
+    '  Assign the character (a string) to `result`.',
+    check_code(_check_counter),
+    hint='from collections import Counter\nresult = Counter("abracadabra").most_common(1)[0][0]',
+    multiline=True,
 )
 
 player.explain("itertools — iterator building blocks", f"""\
@@ -53,18 +60,32 @@ player.explain("itertools — iterator building blocks", f"""\
 
   {cyan("All lazy.")} They return iterators — wrap with list() to see output.""")
 
-player.quiz(
-    "Use itertools.chain to flatten [[1,2],[3,4],[5]] into a list.\n"
-    "  Expected: [1, 2, 3, 4, 5]",
-    check_eval([1, 2, 3, 4, 5]),
-    hint="list(itertools.chain([1,2],[3,4],[5]))  or  chain.from_iterable(...)",
-)
+def _check_chain(ns):
+    r = ns.get("result")
+    if r == [1, 2, 3, 4, 5]:
+        return True, f"got {r!r}"
+    return False, f"got {r!r}; expected [1, 2, 3, 4, 5] — assign to `result`"
 
 player.quiz(
-    "How many 2-element combinations are in 'ABCD'?  "
-    "(use itertools.combinations + len/list)\n  Expected: 6",
-    check_eval(6),
-    hint="len(list(itertools.combinations('ABCD', 2)))",
+    "Use itertools.chain to flatten [[1,2],[3,4],[5]] into a list.\n"
+    "  Assign the list to `result`.  Expected: [1, 2, 3, 4, 5]",
+    check_code(_check_chain),
+    hint="import itertools\nresult = list(itertools.chain([1,2],[3,4],[5]))",
+    multiline=True,
+)
+
+def _check_combinations(ns):
+    r = ns.get("result")
+    if r == 6:
+        return True, f"got {r!r}"
+    return False, f"got {r!r}; expected 6 — assign to `result`"
+
+player.quiz(
+    "How many 2-element combinations are in 'ABCD'?\n"
+    "  Use itertools.combinations.  Assign the count to `result`.  Expected: 6",
+    check_code(_check_combinations),
+    hint="import itertools\nresult = len(list(itertools.combinations('ABCD', 2)))",
+    multiline=True,
 )
 
 player.explain("functools — function tools", f"""\
@@ -89,10 +110,18 @@ player.explain("functools — function tools", f"""\
           def __lt__(self, o): ...
           # Now <=, >, >=, != are auto-generated.""")
 
+def _check_reduce(ns):
+    r = ns.get("result")
+    if r == 120:
+        return True, f"got {r!r}"
+    return False, f"got {r!r}; expected 120 — assign to `result`"
+
 player.quiz(
-    "Use functools.reduce to compute 1*2*3*4*5 (factorial of 5).\n  Expected: 120",
-    check_eval(120),
-    hint="reduce(lambda a,b: a*b, range(1, 6))",
+    "Use functools.reduce to compute 1*2*3*4*5 (factorial of 5).\n"
+    "  Assign the number to `result`.  Expected: 120",
+    check_code(_check_reduce),
+    hint="from functools import reduce\nresult = reduce(lambda a,b: a*b, range(1, 6))",
+    multiline=True,
 )
 
 player.explain("pathlib — modern file paths", f"""\
@@ -129,11 +158,18 @@ player.explain("datetime, json, re — the daily three", f"""\
       re.sub(r"\\s+", " ", messy)             # replace whitespace runs
       re.compile(r"...")                       # compile once, reuse""")
 
+def _check_regex(ns):
+    r = ns.get("result")
+    if r == ["123", "45"]:
+        return True, f"got {r!r}"
+    return False, f"got {r!r}; expected [\"123\", \"45\"] — assign to `result`"
+
 player.quiz(
     'Extract all digit groups from "abc123def45" as a list of strings.\n'
-    '  Expected: ["123", "45"]',
-    check_eval(["123", "45"]),
-    hint='import re; re.findall(r"\\d+", "abc123def45")',
+    '  Assign the list to `result`.  Expected: ["123", "45"]',
+    check_code(_check_regex),
+    hint='import re\nresult = re.findall(r"\\d+", "abc123def45")',
+    multiline=True,
 )
 
 player.play()

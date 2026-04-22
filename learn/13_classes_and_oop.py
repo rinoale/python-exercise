@@ -140,6 +140,7 @@ player.quiz(
         ns["Cat"]("X").name == "X",
         "Cat inherits correctly",
     )),
+    hint="class Cat(Animal):\\n    def speak(self): return 'meow'\\n# Animal.__init__ is inherited — no need to redefine it",
     multiline=True,
 )
 

@@ -99,15 +99,19 @@ player.explain("Decorators with arguments", f"""\
   Three layers: factory(args) → decorator(fn) → wrapper(*args).""")
 
 player.quiz(
-    "Write a decorator factory  only_positive  such that the wrapped function\n"
-    "  returns None if its first argument is ≤ 0, else calls the function.\n"
-    "  Apply it to  double(x) = x * 2.\n"
-    "  double(5) → 10;  double(-3) → None;  double(0) → None.",
+    "Write a decorator FACTORY  only_above(threshold)  so that the wrapped\n"
+    "  function returns None when its first argument is <= threshold,\n"
+    "  else calls the function.  Apply it twice with DIFFERENT thresholds:\n"
+    "      @only_above(0)        def double(x): return x * 2\n"
+    "      @only_above(100)      def big_double(x): return x * 2\n"
+    "  double(5) → 10;  double(0) → None\n"
+    "  big_double(50) → None;  big_double(150) → 300",
     check_code(lambda ns: (
-        ns["double"](5) == 10 and ns["double"](-3) is None and ns["double"](0) is None,
-        "only_positive guards work",
+        ns["double"](5) == 10 and ns["double"](0) is None and
+        ns["big_double"](50) is None and ns["big_double"](150) == 300,
+        "factory produces correctly-configured decorators",
     )),
-    hint="def only_positive(fn):\\n    def w(x, *a, **k): return fn(x, *a, **k) if x > 0 else None\\n    return w",
+    hint="def only_above(threshold):\\n    def decorator(fn):\\n        def w(x, *a, **k): return fn(x, *a, **k) if x > threshold else None\\n        return w\\n    return decorator",
     multiline=True,
 )
 

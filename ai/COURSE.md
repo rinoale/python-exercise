@@ -190,22 +190,20 @@ often cited online is unverified.
 - Handwritten digit classification (same task, new tool)
 - GPU vs CPU: how deep learning scales
 
-### 11 - Build a Transformer from Scratch *(planned)*
-- Tokenization: text → numbers (BPE, vocabulary)
-- Embeddings: turning token IDs into vectors
-- Self-attention: how words relate to each other in a sentence
-- The Transformer block: attention + feed-forward + layer norm
-- Positional encoding: teaching order to a model that sees everything at once
-- Build a character-level language model (nanoGPT-style)
-- Train on Shakespeare, generate new text
-- Hardware: runs on a laptop (CPU or single GPU)
+### 11 - Build a Transformer from Scratch (`11_transformer.py`)
+- Character-level tokenization: chars → IDs → tensors
+- Token and positional embeddings
+- Causal self-attention (Q/K/V, scaled dot product, causal mask)
+- Multi-head attention + feed-forward + residuals + LayerNorm
+- The full MiniGPT: stack N blocks, project to vocab
+- Training loop and autoregressive text generation
+- Train on a tiny Shakespeare corpus — runs on CPU in under a minute
 
-### 12 - Fine-tuning a Pre-trained Model *(planned)*
-- Why fine-tune? Training from scratch costs millions of dollars
-- Hugging Face: the open-source model hub
-- Loading a pre-trained model (GPT-2 or similar)
-- Tokenizer: how the model sees your text
-- Fine-tuning on custom data (your own text, small dataset)
-- LoRA: efficient fine-tuning without changing all weights
-- Inference: generate text from your fine-tuned model
-- Hardware: 1 GPU with 8GB+ VRAM, or free tier on Google Colab
+### 12 - Fine-tuning a Pre-trained Model (`12_fine_tuning.py`)
+- Why fine-tune? Cost comparison: pretrain vs full fine-tune vs LoRA
+- Hugging Face ecosystem (`transformers`, `peft`, `datasets`)
+- Reuse MiniGPT from lesson 11 as the base model
+- Pretrain on domain A (Shakespeare), full fine-tune on domain B (Python)
+- Catastrophic forgetting: what full fine-tuning costs you
+- LoRA explained and implemented by hand (low-rank adapter over `nn.Linear`)
+- Compare: trainable parameter counts, loss curves, generation quality

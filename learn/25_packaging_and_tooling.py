@@ -55,6 +55,7 @@ player.quiz(
     "Type an expression that returns the string 'pyproject.toml' — the\n"
     "  modern single-file config that replaces setup.py.",
     check_eval("pyproject.toml"),
+    hint='"pyproject.toml"  (just the string literal)',
 )
 
 player.explain("Linters and formatters", f"""\

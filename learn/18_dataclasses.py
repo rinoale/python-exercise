@@ -110,7 +110,7 @@ player.explain("frozen and slots", f"""\
 
 player.quiz(
     "Define  @dataclass(frozen=True)  Coord(x: int, y: int).\n"
-    "  Verify  it's hashable (use as set element) and raises on mutation.",
+    "  (We'll verify it's hashable and raises on mutation for you.)",
     check_code(lambda ns: _test_frozen(ns)),
     hint="@dataclass(frozen=True)",
     multiline=True,

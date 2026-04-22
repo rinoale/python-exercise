@@ -3,7 +3,7 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from quiz_player import QuizPlayer, check_eval, check_literal, cyan
+from quiz_player import QuizPlayer, check_eval, check_literal, check_code, cyan
 
 player = QuizPlayer("Lesson 12: Modules and Packages")
 
@@ -17,17 +17,27 @@ player.explain("Importing — three forms", f"""\
   it pollutes your namespace and breaks name tracking in tools.""")
 
 player.quiz(
-    "Type an expression using the math module that returns the square root of 16.\n"
-    "  Expected: 4.0",
-    check_eval(4.0),
-    hint="import math; math.sqrt(16)",
+    "Import math and compute the square root of 16.\n"
+    "  Assign the result to a variable named  result.\n"
+    "  Expected:  result == 4.0",
+    check_code(lambda ns: (
+        ns.get("result") == 4.0 and type(ns.get("result")) is float,
+        "got 4.0" if ns.get("result") == 4.0 else f"result is {ns.get('result')!r}",
+    )),
+    hint="import math\\nresult = math.sqrt(16)",
+    multiline=True,
 )
 
 player.quiz(
-    "Type an expression that returns math.pi rounded to 2 decimal places (as a string).\n"
-    "  Expected: \"3.14\"",
-    check_eval("3.14"),
-    hint='import math; f"{math.pi:.2f}"',
+    "Import math and format math.pi to 2 decimal places as a string.\n"
+    "  Assign the result to a variable named  result.\n"
+    "  Expected:  result == \"3.14\"",
+    check_code(lambda ns: (
+        ns.get("result") == "3.14",
+        "got '3.14'" if ns.get("result") == "3.14" else f"result is {ns.get('result')!r}",
+    )),
+    hint='import math\\nresult = f"{math.pi:.2f}"',
+    multiline=True,
 )
 
 player.explain("if __name__ == \"__main__\" — script vs module", f"""\
@@ -44,7 +54,9 @@ player.explain("if __name__ == \"__main__\" — script vs module", f"""\
           import sys
           print(say_hi(sys.argv[1]))
 
-  Now  import greet  gives you  greet.say_hi  without running the print.""")
+  Running  python greet.py Alice  prints  hi, Alice.
+  But  import greet  defines  say_hi  only — the  if  block is SKIPPED,
+  so nothing is printed on import.""")
 
 player.explain("Package structure", f"""\
   A {cyan("package")} is a folder with an  __init__.py  (can be empty).
@@ -84,11 +96,17 @@ player.explain("Installing and discovering packages", f"""\
 
   Check sys.path if imports behave mysteriously.""")
 
+_cwd = os.getcwd()
 player.quiz(
-    "Given  import os, type an expression that returns your current working\n"
-    "  directory as a string.  (Just describe it in code — any correct expression.)",
-    check_eval(os.getcwd()),
-    hint="os.getcwd()",
+    "Import os and get your current working directory as a string.\n"
+    "  Assign it to a variable named  result.\n"
+    f"  Expected:  result == {_cwd!r}",
+    check_code(lambda ns: (
+        ns.get("result") == _cwd,
+        f"got {_cwd!r}" if ns.get("result") == _cwd else f"result is {ns.get('result')!r}",
+    )),
+    hint="import os\\nresult = os.getcwd()",
+    multiline=True,
 )
 
 player.play()

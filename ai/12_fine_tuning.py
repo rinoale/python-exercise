@@ -234,7 +234,29 @@ player.add_step("Step 1: Why Fine-tune?", f"""\
   {green('Cost order of magnitude:')}
     Pretrain GPT-3 style:   $5-10M, months, thousands of GPUs
     Full fine-tune a 7B:    $100s, hours, 8 GPUs
-    LoRA fine-tune a 7B:    $10s, hour, 1 GPU""")
+    LoRA fine-tune a 7B:    $10s, hour, 1 GPU""",
+
+korean=f"""\
+  대규모 언어 모델을 사전학습하려면 GPU 비용이 {cyan('수백만 달러')}.
+  직접 할 일은 없습니다. 할 필요도 없고요.
+
+  {cyan('거래:')} 누군가가 인터넷 전체로 모델을 사전학습합니다.
+  그 모델은 언어, 문법, 추론, 세계 지식을 배움. 여러분은 그것을
+  {green('여러분의')} 도메인에 맞게 적은 데이터와 비용으로 적응시킵니다.
+
+  {cyan('파인튜닝이 잘하는 것:')}
+    - 스타일 / 톤 / 형식 (고객 서비스 말투, 문서 스타일)
+    - 도메인 특화 지시 따르기
+    - 스키마 준수 (JSON, SQL, 특정 출력 형태)
+
+  {cyan('파인튜닝이 잘 못하는 것:')}
+    - 새로운 사실 가르치기. 이건 RAG(검색)을 사용.
+    - 작은 모델의 추론 버그 수정. 더 큰 모델을 쓰세요.
+
+  {green('비용 규모:')}
+    GPT-3급 사전학습:    $500만-1000만, 수개월, GPU 수천 개
+    7B 풀 파인튜닝:      $수백, 수시간, GPU 8개
+    7B LoRA 파인튜닝:    $수십, 1시간, GPU 1개""")
 
 # ── Step 2: HF ecosystem ────────────────────────────────
 
@@ -264,7 +286,35 @@ player.add_step("Step 2: The Hugging Face Ecosystem", f"""\
   handles LoRA/adapters, `datasets` handles data loading.
 
   This lesson implements the ideas by hand — so you understand what
-  those lines are actually doing. In real work you'd use the library.""")
+  those lines are actually doing. In real work you'd use the library.""",
+
+korean=f"""\
+  실제로 파이썬에서 파인튜닝은 이렇게 합니다:
+
+  {cyan('설치:')}
+    pip install transformers peft datasets accelerate
+
+  {cyan('사전학습 모델 로드:')}
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    model = AutoModelForCausalLM.from_pretrained("gpt2")
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+
+  {cyan('LoRA 적용:')}
+    from peft import LoraConfig, get_peft_model
+    cfg = LoraConfig(r=8, target_modules=["c_attn"])
+    model = get_peft_model(model, cfg)
+
+  {cyan('학습:')}
+    from transformers import Trainer, TrainingArguments
+    trainer = Trainer(model=model, args=..., train_dataset=...)
+    trainer.train()
+
+  {cyan('왜 Hugging Face?')} huggingface.co에 50만+ 오픈 모델 호스팅.
+  모두 같은 API. `transformers`가 아키텍처, `peft`가 LoRA,
+  `datasets`가 데이터 로딩 처리.
+
+  이 레슨에서는 원리를 이해하기 위해 직접 구현합니다.
+  실무에서는 라이브러리를 쓰면 됩니다.""")
 
 # ── Step 3: our setup ───────────────────────────────────
 
@@ -291,7 +341,30 @@ player.add_step("Step 3: Our Setup — MiniGPT as the Base Model", f"""\
     1. Pretrain on Shakespeare
     2. Save a snapshot of the pretrained weights
     3. Fine-tune ALL weights on Python → compare
-    4. Restart from the snapshot, fine-tune ONLY LoRA adapters → compare""")
+    4. Restart from the snapshot, fine-tune ONLY LoRA adapters → compare""",
+
+korean=f"""\
+  레슨 11의 문자 단위 트랜스포머를 재사용하되, {cyan('두')} 코퍼스의
+  합집합으로 어휘를 만듭니다.
+
+  {cyan('도메인 A (사전학습):')} 셰익스피어 대사
+  {cyan('도메인 B (파인튜닝):')} 파이썬 코드 조각
+
+  {cyan('공유 어휘:')} 두 텍스트의 합집합에서 {green(f'{vocab_size}개 고유 문자')}를
+  추출. 사전학습 때 {{ }} ( ) 같은 파이썬 전용 문자는 안 쓰이지만
+  어휘에 들어있어서 파인튜닝 때 활성화 가능.
+
+  {cyan('모델 설정:')}
+    d_model  = {D_MODEL}
+    n_heads  = {N_HEADS}
+    n_layers = {N_LAYERS}
+    seq_len  = {SEQ_LEN}
+
+  {cyan('계획:')}
+    1. 셰익스피어로 사전학습
+    2. 사전학습 가중치 스냅샷 저장
+    3. 모든 가중치를 파이썬으로 파인튜닝 → 비교
+    4. 스냅샷에서 재시작, LoRA 어댑터만 파인튜닝 → 비교""")
 
 # ── Step 4: pretrain ────────────────────────────────────
 
@@ -319,7 +392,23 @@ player.add_step("Step 4: Pretrain on Shakespeare", f"""\
 
   The model can handle Shakespeare. Prompted with `def ` it tries to
   continue in Shakespeare style — it has no idea what Python looks
-  like yet. This is our {green('pretrained')} starting point.""")
+  like yet. This is our {green('pretrained')} starting point.""",
+
+korean=f"""\
+  레슨 11과 같은 학습 루프: 셰익스피어로 500스텝.
+
+  {green('최종 사전학습 손실:')} {pretrain_losses[-1]:.3f}
+  {green('총 파라미터:')} {total_params:,}
+
+  {cyan("'First Citizen:\\n'로 생성 — 도메인 내:")}
+{shake_out_after_pretrain}
+
+  {cyan("'def '로 생성 — 도메인 밖:")}
+{code_out_after_pretrain}
+
+  모델은 셰익스피어를 처리할 수 있음. `def `를 넣으면 셰익스피어
+  스타일로 이어가려 함 — 파이썬이 뭔지 아직 모름.
+  이것이 우리의 {green('사전학습된')} 출발점.""")
 
 # ── Step 5: full fine-tune ──────────────────────────────
 
@@ -333,9 +422,20 @@ code_out_after_full = sample(model, "def ", n=180)
 player.add_step("Step 5: Full Fine-tune on Python", f"""\
   Keep training the SAME model, now on Python code. All weights update.
 
-  {cyan('Code:')}
-    code_batch = make_batcher(PYTHON_CODE)
-    train(model, code_batch, steps=300, lr=1e-3)
+  {cyan('Type: (copy weights, fine-tune, see forgetting happen)')}
+    import copy, torch, torch.nn as nn, torch.nn.functional as F
+    model = nn.Linear(4, 4)
+    original_weights = copy.deepcopy(model.state_dict())
+    original_weights['weight'][0]           # save the original
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-2)
+    for _ in range(50):
+        x = torch.randn(8, 4)
+        loss = F.cross_entropy(model(x), torch.randint(0, 4, (8,)))
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    model.state_dict()['weight'][0]         # weights changed after fine-tuning
+    original_weights['weight'][0]           # original preserved in snapshot
 
   {cyan('Lower learning rate:')} 1e-3 vs 3e-3 for pretraining. Standard
   practice — you don't want to blow away the pretrained knowledge.
@@ -351,7 +451,41 @@ player.add_step("Step 5: Full Fine-tune on Python", f"""\
 
   The model now produces code-ish output. It also partially forgot
   Shakespeare — that's {green('catastrophic forgetting')}, one reason
-  full fine-tuning can be dangerous.""")
+  full fine-tuning can be dangerous.""",
+
+korean=f"""\
+  같은 모델을 계속 학습, 이번엔 파이썬 코드. 모든 가중치가 업데이트됨.
+
+  {cyan('Type: (가중치 복사, 파인튜닝, 망각 현상 확인)')}
+    import copy, torch, torch.nn as nn, torch.nn.functional as F
+    model = nn.Linear(4, 4)
+    original_weights = copy.deepcopy(model.state_dict())
+    original_weights['weight'][0]           # 원본 저장
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-2)
+    for _ in range(50):
+        x = torch.randn(8, 4)
+        loss = F.cross_entropy(model(x), torch.randint(0, 4, (8,)))
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+    model.state_dict()['weight'][0]         # 파인튜닝 후 가중치 변화
+    original_weights['weight'][0]           # 원본은 스냅샷에 보존
+
+  {cyan('낮은 학습률:')} 사전학습 때 3e-3 → 파인튜닝은 1e-3.
+  사전학습 지식을 날려버리지 않기 위한 표준 관행.
+
+  {green('학습 가능 파라미터:')} {trainable_full:,}개 (전체 모델)
+  {green('최종 파인튜닝 손실:')} {ft_losses[-1]:.3f}
+
+  {cyan("'def '로 생성 — 이제 새 도메인:")}
+{code_out_after_full}
+
+  {cyan("'First Citizen:\\n'로 생성 — 이전 도메인:")}
+{shake_out_after_full}
+
+  모델이 코드 비슷한 출력을 생성. 하지만 셰익스피어를 부분적으로
+  잊었음 — 이것이 {green('파괴적 망각')},
+  풀 파인튜닝이 위험할 수 있는 이유.""")
 
 # ── Step 6: LoRA concept ────────────────────────────────
 
@@ -378,10 +512,60 @@ player.add_step("Step 6: LoRA — Low-Rank Adaptation", f"""\
     - B is initialized to 0, so the adapter starts as a no-op
     - Merge back at inference: W + BA, no latency cost
 
-  {cyan('Code sketch:')}
-    class LoRALinear(nn.Module):
-        def forward(self, x):
-            return self.base(x) + (x @ self.A.T @ self.B.T) * self.scale""")
+  {cyan('Type: (LoRA 수학을 직접 확인 — 파라미터 수 비교)')}
+    import torch, torch.nn as nn
+    d, r = 64, 8
+    W = nn.Linear(d, d, bias=False)
+    A = torch.randn(r, d)
+    B = torch.zeros(d, r)
+    d * d                               # full: 4096 params
+    r * d + d * r                       # LoRA: 1024 params — 4x smaller
+    x = torch.randn(1, d)
+    base_out = W(x)
+    lora_correction = (x @ A.T @ B.T)   # starts at 0 because B=0
+    lora_correction.sum()               # ≈ 0 — adapter starts as no-op
+    nn.init.kaiming_uniform_(B)
+    lora_correction = (x @ A.T @ B.T)   # now non-zero after init
+    final = base_out + lora_correction  # W(x) + correction""",
+
+korean=f"""\
+  풀 파인튜닝은 모든 가중치를 업데이트. 7B 모델이면
+  7B 그래디언트, 7B 옵티마이저 상태, ~30GB VRAM. 무거움.
+
+  {cyan("LoRA의 통찰:")} 사전학습 가중치를 적응시키는 데 필요한
+  {green('변화')}는 보통 저랭크. W를 직접 업데이트하지 않고
+  작은 보정값을 학습:
+
+      W_final = W_pretrained + α · (B @ A)
+
+  W는 (d × d), A는 (r × d), B는 (d × r), {cyan('r << d')}.
+
+  {cyan('d=64, r=8일 때:')}
+    풀 파인튜닝:     64 × 64 = 4,096 파라미터
+    LoRA 어댑터:     64 × 8 + 8 × 64 = 1,024 파라미터
+    절약:            4배 작음 — d=4096, r=8이면 256배
+
+  {cyan('핵심 기법:')}
+    - 기본 가중치는 동결 (requires_grad=False)
+    - A와 B만 학습
+    - B는 0으로 초기화 → 어댑터가 처음에는 아무것도 안 함
+    - 추론 시 합치기: W + BA, 지연 비용 없음
+
+  {cyan('Type: (LoRA 수학을 직접 확인 — 파라미터 수 비교)')}
+    import torch, torch.nn as nn
+    d, r = 64, 8
+    W = nn.Linear(d, d, bias=False)
+    A = torch.randn(r, d)
+    B = torch.zeros(d, r)
+    d * d                               # 풀: 4096 파라미터
+    r * d + d * r                       # LoRA: 1024 — 4배 작음
+    x = torch.randn(1, d)
+    base_out = W(x)
+    lora_correction = (x @ A.T @ B.T)   # B=0이므로 0에서 시작
+    lora_correction.sum()               # ≈ 0 — 어댑터가 처음엔 no-op
+    nn.init.kaiming_uniform_(B)
+    lora_correction = (x @ A.T @ B.T)   # 초기화 후 이제 0이 아님
+    final = base_out + lora_correction  # W(x) + 보정값""")
 
 # ── Step 7: LoRA fine-tune ──────────────────────────────
 
@@ -449,11 +633,18 @@ player.add_step("Step 7: Fine-tune with LoRA", f"""\
   Restart from the pretrained snapshot. Wrap every attention Linear
   with a LoRA adapter. Freeze everything except the adapters. Train.
 
-  {cyan('Code:')}
-    model = MiniGPT(...)
-    model.load_state_dict(pretrained_state)    # restore pretrained
-    model = inject_lora(model, rank=8)         # freeze base, add adapters
-    train(model, code_batch, steps=300, lr=5e-3)
+  {cyan('Type: (freeze params, count trainable vs frozen)')}
+    import torch, torch.nn as nn
+    model = nn.Sequential(nn.Linear(8, 16), nn.ReLU(), nn.Linear(16, 4))
+    for p in model.parameters():
+        p.requires_grad = False             # freeze all
+    lora_A = nn.Parameter(torch.randn(4, 16))
+    lora_B = nn.Parameter(torch.zeros(4, 4))
+    frozen = sum(p.numel() for p in model.parameters())
+    trainable = lora_A.numel() + lora_B.numel()
+    frozen                                  # 212 — base model frozen
+    trainable                               # 80 — only adapters train
+    100 * trainable / (frozen + trainable)   # % of total
 
   {green('Parameter accounting:')}
     Frozen (base):  {frozen_lora:,}
@@ -469,7 +660,40 @@ player.add_step("Step 7: Fine-tune with LoRA", f"""\
   Notice: the LoRA model shifts toward Python but often keeps more of
   its Shakespeare knowledge — fewer weights moved, less forgetting.
 
-  Loss comparison: images/12_finetune_loss.png""")
+  Loss comparison: images/12_finetune_loss.png""",
+
+korean=f"""\
+  사전학습 스냅샷에서 재시작. 모든 어텐션 Linear를 LoRA 어댑터로 감싸기.
+  어댑터 외 모든 것 동결. 학습.
+
+  {cyan('Type: (파라미터 동결, 학습 가능 vs 동결 수 세기)')}
+    import torch, torch.nn as nn
+    model = nn.Sequential(nn.Linear(8, 16), nn.ReLU(), nn.Linear(16, 4))
+    for p in model.parameters():
+        p.requires_grad = False             # 전부 동결
+    lora_A = nn.Parameter(torch.randn(4, 16))
+    lora_B = nn.Parameter(torch.zeros(4, 4))
+    frozen = sum(p.numel() for p in model.parameters())
+    trainable = lora_A.numel() + lora_B.numel()
+    frozen                                  # 212 — 기본 모델 동결
+    trainable                               # 80 — 어댑터만 학습
+    100 * trainable / (frozen + trainable)   # 전체의 %
+
+  {green('파라미터 현황:')}
+    동결 (기본):    {frozen_lora:,}
+    학습 가능:      {trainable_lora:,}개 (전체의 {pct:.1f}%)
+    최종 손실:      {lora_losses[-1]:.3f}
+
+  {cyan("'def '로 생성 — LoRA 파인튜닝 후:")}
+{code_out_after_lora}
+
+  {cyan("'First Citizen:\\n'로 생성 — LoRA 파인튜닝 후:")}
+{shake_out_after_lora}
+
+  주목: LoRA 모델은 파이썬으로 이동하면서도 셰익스피어 지식을
+  더 잘 유지 — 움직인 가중치가 적어서 망각이 적음.
+
+  손실 비교: images/12_finetune_loss.png""")
 
 # ── Step 8: summary ─────────────────────────────────────
 
@@ -492,13 +716,32 @@ player.add_step("Step 8: Summary", f"""\
     model = get_peft_model(model, LoraConfig(r=8, alpha=16, ...))
     # train; save only adapter weights (~few MB instead of 16GB)
 
-  {cyan('Beyond this course:')}
-    - RAG  → give the model access to your docs at inference time
-    - RLHF / DPO → align model behavior with human preferences
-    - Distillation → compress a big model into a small one
-    - Quantization → run big models on tiny hardware (int4, int8)
+  {green('What\'s next?')}
+    Lesson 13: the full pipeline — from raw data in Elasticsearch
+    to a domain-specialized generative AI model.""",
 
-  You now understand the building blocks of modern LLM engineering.""")
+korean=f"""\
+  {green('만든 것:')}
+    ✓ 도메인 A에서 기본 트랜스포머 사전학습
+    ✓ 도메인 B에서 풀 파인튜닝 (모든 가중치)
+    ✓ LoRA를 직접 구현 — nn.Linear를 감싸는 저랭크 어댑터
+    ✓ 파라미터의 일부만으로 LoRA 파인튜닝
+
+  {cyan('파인튜닝 비교:')}
+    방법         학습 파라미터      망각        저장
+    풀           {trainable_full:>5,}개           높음        전체 체크포인트
+    LoRA (r=8)   {trainable_lora:>5,}개 ({pct:.1f}%)    낮음        어댑터만
+
+  {cyan('실무 경로 (실제 라이브러리):')}
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from peft import LoraConfig, get_peft_model
+    model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-3-8B")
+    model = get_peft_model(model, LoraConfig(r=8, alpha=16, ...))
+    # 학습 후 어댑터 가중치만 저장 (~수MB, 16GB 대신)
+
+  {green('다음은?')}
+    레슨 13: 전체 파이프라인 — Elasticsearch의 원시 데이터에서
+    도메인 특화 생성 AI 모델까지.""")
 
 # ── Play ────────────────────────────────────────────────
 

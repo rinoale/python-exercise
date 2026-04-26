@@ -82,12 +82,11 @@ undisclosed    →  text → text      (GPT-4 / Claude, 2023~)
        ↓
 [Lessons 09-10]  Neural Networks / PyTorch ←  the bridge to deep learning
        ↓
-   (beyond this course)
+[Lesson 11]      Transformer from scratch  ←  how GPT/Claude work
        ↓
-       CNNs         →  image recognition
-       RNNs / LSTM  →  sequences, time series
-       Transformers →  language models (GPT, Claude)
-       RLHF         →  aligning AI with human preferences
+[Lesson 12]      Fine-tuning & LoRA        ←  adapting models to your domain
+       ↓
+[Lesson 13]      Domain data pipeline      ←  from your data to your model
 ```
 
 The core principle never changes — just the scale.
@@ -207,3 +206,12 @@ often cited online is unverified.
 - Catastrophic forgetting: what full fine-tuning costs you
 - LoRA explained and implemented by hand (low-rank adapter over `nn.Linear`)
 - Compare: trainable parameter counts, loss curves, generation quality
+
+### 13 - Domain Data Pipeline (`13_domain_data_pipeline.py`)
+- The real-world pipeline: Elasticsearch → clean → tokenize → fine-tune → generate
+- Pulling data from Elasticsearch (search, scroll, aggregations)
+- Cleaning raw data: filtering noise, normalizing text, formatting strategies
+- Data quality vs quantity: the quality pyramid
+- Training a character-level model on domain-specific data (Mabinogi example)
+- From toy to production: gpt2 → Llama with LoRA/QLoRA
+- The full end-to-end workflow for building a domain-specialized generative AI

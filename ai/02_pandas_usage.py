@@ -1,5 +1,13 @@
 """
-Lesson 02: Pandas Usage
+Lesson 02: Pandas — Working with Real Data
+
+Goal: load a CSV file, explore it, understand its shape,
+      and compute the slope on 100 real data points.
+
+Open a Python REPL:
+    cd ai/
+    python3
+    >>> import pandas as pd
 """
 
 import os
@@ -7,6 +15,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import pandas as pd
+import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -14,151 +23,276 @@ from lesson_player import LessonPlayer, cyan, green
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-player = LessonPlayer("Lesson 02: Pandas Usage")
+player = LessonPlayer("Lesson 02: Pandas — Working with Real Data")
 
 # ── Step 1 ──────────────────────────────────────────────
 
-df = pd.read_csv(os.path.join(BASE_DIR, 'sample.csv'))
+player.add_step("Step 1: Why Pandas?", f"""\
+  {cyan('Lesson 01:')} we typed 3 data points by hand.
+  {cyan('Real ML:')}   data comes from files — CSV, databases, APIs.
 
-player.add_step("Step 1: Loading CSV", f"""\
-  pd.read_csv() reads a CSV file into a DataFrame.
-  A DataFrame is a 2D table with labeled columns (like a spreadsheet).
+  {green('Pandas')} is the standard tool for loading and manipulating
+  tabular data (rows and columns, like a spreadsheet).
 
-  {cyan('Code:')}
-    import pandas as pd
-    df = pd.read_csv('sample.csv')
+      NumPy array  = a grid of numbers (math operations)
+      Pandas DataFrame = a table with column NAMES + mixed types
 
-  {green('Result:')}
-    Shape: {df.shape[0]} rows x {df.shape[1]} columns
-    Columns: {list(df.columns)}
+  {cyan('Analogy for Ruby developers:')}
+      NumPy  ≈  Array of numbers with math methods
+      Pandas ≈  ActiveRecord result set / CSV::Table
 
-    First 5 rows:
-{df.head().to_string(index=True)}""")
+  {cyan('Key Pandas objects:')}
+      DataFrame  = 2D table (the whole spreadsheet)
+      Series     = 1D column (one column of the spreadsheet)""")
 
 # ── Step 2 ──────────────────────────────────────────────
+
+df = pd.read_csv(os.path.join(BASE_DIR, 'sample.csv'))
+
+player.add_step("Step 2: Load a CSV File", f"""\
+  {cyan('Type:')}
+      import pandas as pd
+      df = pd.read_csv('sample.csv')
+
+  {cyan('Then try:')}
+      type(df)        →  pandas.core.frame.DataFrame
+      df.shape        →  {df.shape}       (100 rows, 2 columns)
+      df.columns      →  {list(df.columns)}
+      df.head()       →  first 5 rows
+      df.tail(3)      →  last 3 rows
+      df.dtypes       →  data types per column
+
+  {green('df.head() output:')}
+{df.head().to_string(index=True)}""")
+
+# ── Step 3 ──────────────────────────────────────────────
 
 x = df['x']
 y = df['y']
 
-player.add_step("Step 2: Exploring Data", f"""\
-  Access a column by name: df['column_name']
-  Returns a Series (1D labeled array — one column of the spreadsheet).
+player.add_step("Step 3: Access Columns — Series", f"""\
+  {cyan('Type:')}
+      x = df['x']
+      y = df['y']
 
-  {cyan('Code:')}
-    x = df['x']
-    y = df['y']
-    df.head(3)      # first 3 rows
+  {green('What is x?')}
+      type(x)    →  {type(x).__name__}
+      x.shape    →  {x.shape}
+      x[:5]      →  {x[:5].values}
 
-  {green('Result:')}
-    df.head(3):
-{df.head(3).to_string(index=True)}
+  {cyan('A Series is one column of the DataFrame.')}
+      DataFrame = the whole table
+      Series    = one column
 
-    x[:5] = {x[:5].values}
-    y[:5] = {y[:5].values}""")
+  {cyan('Other ways to access columns:')}
+      df['x']        →  Series  (bracket notation — always works)
+      df.x           →  Series  (dot notation — only if name is valid Python)
+      df[['x','y']]  →  DataFrame (double brackets = multiple columns)
 
-# ── Step 3 ──────────────────────────────────────────────
+  {cyan('Try:')}
+      x.values       →  the underlying NumPy array
+      type(x.values) →  {type(x.values).__name__}
+
+  So Pandas wraps NumPy arrays, adding labels and extra methods.""")
+
+# ── Step 4 ──────────────────────────────────────────────
 
 desc = df.describe()
 x_mean = desc['x']['mean']
 x_std = desc['x']['std']
 
-player.add_step("Step 3: Summary Statistics", f"""\
-  .describe() shows count, mean, std, min, 25%, 50%, 75%, max
-  for each numeric column.
-
-  {cyan('Code:')}
-    df.describe()
+player.add_step("Step 4: Summary Statistics — describe()", f"""\
+  {cyan('Type:')}
+      df.describe()
 
   {green('Result:')}
-{desc.to_string()}""",
+{desc.to_string()}
+
+  {cyan('What each row means:')}
+      count = number of non-missing values
+      mean  = average (center of the data)
+      std   = standard deviation (spread of the data)
+      min   = smallest value
+      25%   = first quartile (25% of values are below this)
+      50%   = median (middle value)
+      75%   = third quartile
+      max   = largest value""",
 
 detail=f"""\
-  {cyan('What each row means:')}
-    count  = number of values (100)
-    mean   = average
-    std    = standard deviation — how spread out the values are
-    min    = smallest value
-    25%    = 25% of values are below this (Q1)
-    50%    = the middle value, aka median (Q2)
-    75%    = 75% of values are below this (Q3)
-    max    = largest value
+  {green('Term: Standard Deviation (std)')}
 
-  {cyan('std and the 68-95-99.7 rule (normal distribution):')}
-    ~68% of values fall within  mean ± 1 std  →  {x_mean - x_std:.1f} ~ {x_mean + x_std:.1f}
-    ~95% of values fall within  mean ± 2 std  →  {x_mean - 2*x_std:.1f} ~ {x_mean + 2*x_std:.1f}
-    ~99% of values fall within  mean ± 3 std  →  {x_mean - 3*x_std:.1f} ~ {x_mean + 3*x_std:.1f}
+      std measures how far values typically are from the mean.
+      Small std = data is clustered tightly around the mean.
+      Large std = data is spread out widely.
 
-                        ██
-                       ████
-                      ██████
-                   ████████████
-               ████████████████████
-          ▁▂▃▅████████████████████████▅▃▂▁
-          |---------|---mean---|---------|
-         -3σ       -1σ       +1σ       +3σ
+  {cyan('The 68-95-99.7 Rule (for bell-shaped data):')}
+      ~68% of data falls within  mean ± 1 std  →  {x_mean - x_std:.1f} to {x_mean + x_std:.1f}
+      ~95% of data falls within  mean ± 2 std  →  {x_mean - 2*x_std:.1f} to {x_mean + 2*x_std:.1f}
+      ~99% of data falls within  mean ± 3 std  →  {x_mean - 3*x_std:.1f} to {x_mean + 3*x_std:.1f}
 
-  {cyan('std vs range:')}
-    range (max-min) = {desc['x']['max'] - desc['x']['min']:.1f}  ← stretched by outliers
-    std             = {desc['x']['std']:.1f}   ← measures the typical spread
-    IQR (75%-25%)   = {desc['x']['75%'] - desc['x']['25%']:.1f}   ← similar to std, ignores outliers""")
+                          ██
+                         ████
+                        ██████
+                     ████████████
+                 ████████████████████
+            ▁▂▃▅████████████████████████▅▃▂▁
+            |---------|---mean---|---------|
+           -3σ       -1σ       +1σ       +3σ
 
-# ── Step 4 ──────────────────────────────────────────────
+  {cyan('Try:')}
+      x.std()          →  {x.std():.4f}
+      x.median()       →  {x.median():.4f}   (same as 50%)
+      x.max() - x.min()→  {x.max() - x.min():.4f}  (range)""")
+
+# ── Step 5 ──────────────────────────────────────────────
 
 df_c = df - df.mean()
 desc_c = df_c.describe()
 
-player.add_step("Step 4: Centering the DataFrame", f"""\
-  Subtract the mean of each column from every value.
-  Same as lesson 01, but pandas does it for all columns at once.
+player.add_step("Step 5: Center the Entire DataFrame", f"""\
+  {cyan('Type:')}
+      df_c = df - df.mean()
+      df_c.describe()
 
-  {cyan('Code:')}
-    df_c = df - df.mean()
-    df_c.describe()
+  {green('Result (notice mean ≈ 0 for both columns):')}
+{desc_c.to_string()}
 
-  {green('Result (notice mean ≈ 0):')}
-{desc_c.to_string()}""")
+  {cyan('What happened?')}
+      Pandas subtracted each column's mean from every value
+      in that column — the same centering we did in lesson 01,
+      but on ALL columns at once.
 
-# ── Step 5 ──────────────────────────────────────────────
+  {cyan('Verify:')}
+      df_c.mean()
+
+      x    {df_c['x'].mean():.2e}     (essentially zero)
+      y    {df_c['y'].mean():.2e}     (essentially zero)
+
+  {green('Why center?')}
+      Same reason as lesson 01: after centering, we can find
+      the slope with  a = sum(xc*yc) / sum(xc*xc)
+      without worrying about the intercept.""")
+
+# ── Step 6 ──────────────────────────────────────────────
 
 xx = df_c['x'] * df_c['x']
 xy = df_c['x'] * df_c['y']
 a = xy.sum() / xx.sum()
 
-player.add_step("Step 5: Computing Slope", f"""\
-  Same formula as lesson 01, now on 100 real data points.
-    a = sum(xc * yc) / sum(xc * xc)
+player.add_step("Step 6: Compute the Slope on 100 Points", f"""\
+  {cyan('Type:')}
+      xx = df_c['x'] * df_c['x']     # variance components
+      xy = df_c['x'] * df_c['y']     # covariance components
+      a = xy.sum() / xx.sum()
+      a    →  {a:.4f}
 
-  {cyan('Code:')}
-    xx = df_c['x'] * df_c['x']
-    xy = df_c['x'] * df_c['y']
-    a = xy.sum() / xx.sum()
+  {green('Same formula as lesson 01:')}
+      a = Σ(xc * yc) / Σ(xc * xc)
 
-  {green('Result:')}
-    a = {a:.2f}
+      Numerator:   xy.sum() = {xy.sum():.2f}  (covariance direction)
+      Denominator: xx.sum() = {xx.sum():.2f}   (variance of x)
 
-  For each 1-unit increase in x, y increases by ~{a:.0f}.""")
+  {green('Interpretation:')}
+      For every 1-unit increase in x, y increases by ~{a:.0f}.
 
-# ── Step 6 ──────────────────────────────────────────────
+  {cyan('Compare with lesson 01:')}
+      Lesson 01 (3 points):   a = 2.05
+      Lesson 02 (100 points): a = {a:.2f}
 
-plt.figure()
-plt.scatter(df_c['x'], df_c['y'])
-plt.plot(df_c['x'], a * df_c['x'], color='red')
+  More data → more reliable estimate of the true pattern.""",
+
+detail=f"""\
+  {green('Term: Covariance and Correlation')}
+
+  {cyan('Covariance = xy.sum() / len(x)')}
+      = {xy.sum() / len(x):.4f}
+      Tells direction: positive (x↑ y↑) or negative (x↑ y↓).
+      Problem: the number depends on the units/scale of x and y.
+
+  {cyan('Correlation = covariance / (std_x * std_y)')}
+      = {(xy.sum() / len(x)) / (df_c['x'].std() * df_c['y'].std()):.4f}
+      Always between -1 and +1.  Unit-free.
+          +1 = perfect positive linear relationship
+           0 = no linear relationship
+          -1 = perfect negative linear relationship
+
+  {cyan('Try:')}
+      df.corr()    →  correlation matrix
+
+{df.corr().to_string()}
+
+      The correlation between x and y is strong and positive.""")
+
+# ── Step 7 ──────────────────────────────────────────────
+
+plt.figure(figsize=(10, 6))
+plt.scatter(df['x'], df['y'], alpha=0.6, label='Actual data')
+x_line = np.linspace(df['x'].min(), df['x'].max(), 100)
+y_line = a * (x_line - x.mean()) + y.mean()
+plt.plot(x_line, y_line, color='red', linewidth=2, label=f'y = {a:.1f}x (centered)')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('100 Data Points with Best-Fit Line')
+plt.legend()
+plt.tight_layout()
 plt.savefig(os.path.join(BASE_DIR, "images", "02_regression.png"))
 plt.close()
 
-player.add_step("Step 6: Plotting", f"""\
-  matplotlib draws scatter plots and line plots.
+player.add_step("Step 7: Visualize — Scatter Plot + Line", f"""\
+  {cyan('The code (we save to a file since this is a terminal):')}
+      import matplotlib.pyplot as plt
+      plt.scatter(df['x'], df['y'], alpha=0.6)
+      plt.plot(x_sorted, a * x_sorted, color='red')
+      plt.savefig('images/02_regression.png')
 
-  {cyan('Code:')}
-    plt.scatter(df_c['x'], df_c['y'])          # dots
-    plt.plot(df_c['x'], a * df_c['x'])         # regression line
-    plt.savefig('images/02_regression.png')
+  {green('Plot saved to images/02_regression.png')}
+      Open it to see 100 blue dots with a red regression line.
 
-  {green('Result:')}
-    Plot saved to images/02_regression.png
+  {cyan('What the plot tells you:')}
+      - Blue dots = actual data (100 points)
+      - Red line  = our model's prediction: y = {a:.1f} * x
+      - Dots close to line = good prediction
+      - Dots far from line = noise our model can't capture
 
-  The scatter shows data points, the red line is y = {a:.0f} * x.
-  Points close to the line → good fit. Far away → noise.""")
+  {green('ASCII approximation:')}
+      y
+      │                    · · ·
+      │               · ·/· ·
+      │           · · /· ·
+      │        · · /· ·
+      │      · ·/ · ·
+      │   · ·/ · ·
+      │  ·/· ·
+      │ /·
+      └──────────────────── x
+             red line / through the data""")
+
+# ── Step 8 ──────────────────────────────────────────────
+
+player.add_step("Step 8: Summary — Pandas for ML", f"""\
+  {green('What you learned:')}
+
+      {cyan('1. Load data')}
+         df = pd.read_csv('file.csv')
+
+      {cyan('2. Explore data')}
+         df.head(), df.describe(), df.shape, df.dtypes
+
+      {cyan('3. Access columns')}
+         x = df['column_name']  →  Series (1D)
+
+      {cyan('4. Math on columns')}
+         df - df.mean()         →  center all columns
+         df['x'] * df['y']     →  element-wise operations
+         df.corr()              →  correlation matrix
+
+      {cyan('5. Compute slope')}
+         Same formula as lesson 01, now on 100 real points.
+
+  {green('What\'s missing?')}
+      We only have slope 'a'.  We need intercept 'b' too,
+      so predictions work on UN-centered data.
+      That's lesson 03: y = a*x + b  (full linear regression).""")
 
 # ── Play ────────────────────────────────────────────────
 

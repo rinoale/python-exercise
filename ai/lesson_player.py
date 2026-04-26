@@ -42,8 +42,8 @@ class LessonPlayer:
         self.title = title
         self.steps = []
 
-    def add_step(self, title, content, detail=None):
-        self.steps.append({"title": title, "content": content, "detail": detail})
+    def add_step(self, title, content, detail=None, korean=None, detail_korean=None):
+        self.steps.append({"title": title, "content": content, "detail": detail, "korean": korean, "detail_korean": detail_korean})
 
     def play(self):
         if not self.steps:
@@ -53,7 +53,8 @@ class LessonPlayer:
             return
         idx = 0
         show_detail = False
-        self._render(idx, show_detail)
+        show_korean = False
+        self._render(idx, show_detail, show_korean)
         while True:
             key = self._read_key()
             if key == "right":
@@ -71,10 +72,13 @@ class LessonPlayer:
             elif key == "detail":
                 if self.steps[idx]["detail"]:
                     show_detail = not show_detail
+            elif key == "korean":
+                if self.steps[idx]["korean"]:
+                    show_korean = not show_korean
             elif key == "quit":
                 print("\033[0m")
                 break
-            self._render(idx, show_detail)
+            self._render(idx, show_detail, show_korean)
 
     def _print_all(self):
         """Fallback: print all steps at once when not in a terminal."""
@@ -92,17 +96,23 @@ class LessonPlayer:
             print("-" * 60)
             print()
 
-    def _render(self, idx, show_detail=False):
+    def _render(self, idx, show_detail=False, show_korean=False):
         print("\033[2J\033[H", end="")  # clear screen, cursor to top
         step = self.steps[idx]
         print(bold(self.title))
         print(yellow(step["title"]))
         print()
-        print(step["content"])
-        if step["detail"]:
+        if show_korean and step["korean"]:
+            print(step["korean"])
+        else:
+            print(step["content"])
+        detail = step["detail"]
+        if show_korean and step.get("detail_korean"):
+            detail = step["detail_korean"]
+        if detail:
             if show_detail:
                 print()
-                print(step["detail"])
+                print(detail)
             else:
                 print()
                 print(cyan("  [d] show more"))
@@ -110,6 +120,9 @@ class LessonPlayer:
         nav = f"  [{idx + 1}/{len(self.steps)}] \u2190 \u2192 navigate"
         if step["detail"]:
             nav += " | d detail"
+        if step["korean"]:
+            lang = "\ud55c\uad6d\uc5b4" if not show_korean else "English"
+            nav += f" | k {lang}"
         nav += " | Home/End jump | q quit"
         print(gray(nav))
 
@@ -136,6 +149,8 @@ class LessonPlayer:
                 return "right"
             elif ch == "d":
                 return "detail"
+            elif ch == "k":
+                return "korean"
             return "unknown"
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old)

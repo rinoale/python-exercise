@@ -272,3 +272,435 @@ Goal: write production-quality Python; use features from 3.10+.
 
 Once Level 2 is solid, the AI course (`../ai/COURSE.md`) will feel much
 lighter on syntax friction.
+
+---
+
+# Closure
+
+## What is a closure?
+
+A **closure** is a function that remembers variables from the scope where it
+was defined, even after that scope has finished executing.
+
+Three conditions make a closure:
+1. There is a **nested function** (a function inside another function).
+2. The inner function **references a variable** from the outer function.
+3. The outer function **returns the inner function**.
+
+## The simplest example
+
+### Python
+
+```python
+def make_greeter(greeting):
+    def greet(name):
+        return f"{greeting}, {name}!"   # 'greeting' comes from outer scope
+    return greet
+
+hello = make_greeter("Hello")
+hi = make_greeter("Hi")
+
+hello("Alice")   # "Hello, Alice!"
+hi("Alice")      # "Hi, Alice!"
+```
+
+`make_greeter` has finished running, but `hello` still remembers that
+`greeting` is `"Hello"`. That remembered environment is the closure.
+
+### JavaScript (same concept)
+
+```javascript
+function makeGreeter(greeting) {
+    return function(name) {
+        return `${greeting}, ${name}!`;   // 'greeting' from outer scope
+    };
+}
+
+const hello = makeGreeter("Hello");
+const hi = makeGreeter("Hi");
+
+hello("Alice");   // "Hello, Alice!"
+hi("Alice");      // "Hi, Alice!"
+```
+
+Identical pattern. Closures work the same way in both languages.
+
+## How it actually works
+
+When Python creates the inner function, it attaches a reference to the
+outer variable — not a copy of the value.
+
+```python
+def make_counter():
+    count = 0
+    def increment():
+        nonlocal count    # needed to reassign the outer variable
+        count += 1
+        return count
+    return increment
+
+c = make_counter()
+c()   # 1
+c()   # 2
+c()   # 3  — 'count' persists between calls
+```
+
+```javascript
+// JavaScript equivalent — no 'nonlocal' needed
+function makeCounter() {
+    let count = 0;
+    return function() {
+        count += 1;
+        return count;
+    };
+}
+
+const c = makeCounter();
+c();   // 1
+c();   // 2
+c();   // 3
+```
+
+**Key difference**: Python requires `nonlocal` to reassign an outer
+variable. JavaScript doesn't — `let` is freely reassignable from inner
+scopes. If you only read or mutate (e.g., append to a list), Python
+doesn't need `nonlocal` either.
+
+## Why `nonlocal`?
+
+Without `nonlocal`, Python treats `count = ...` as creating a new local
+variable, shadowing the outer one:
+
+```python
+def broken_counter():
+    count = 0
+    def increment():
+        count += 1       # UnboundLocalError! Python thinks count is local
+        return count
+    return increment
+```
+
+`nonlocal count` tells Python: "this name belongs to the enclosing scope,
+don't create a new local."
+
+## Reference, not copy
+
+Closures capture the **reference** to the variable, not its value at
+creation time. This is a common gotcha:
+
+```python
+functions = []
+for i in range(3):
+    functions.append(lambda: i)
+
+functions[0]()   # 2  (not 0!)
+functions[1]()   # 2  (not 1!)
+functions[2]()   # 2
+```
+
+All three lambdas share the same `i`, which ends up as `2` after the loop.
+
+Fix — capture the current value with a default argument:
+
+```python
+functions = []
+for i in range(3):
+    functions.append(lambda i=i: i)   # default arg copies current value
+
+functions[0]()   # 0
+functions[1]()   # 1
+functions[2]()   # 2
+```
+
+Same gotcha exists in JavaScript with `var` (but not with `let`, which
+creates a new binding per iteration).
+
+## Why closures are useful
+
+### 1. Data privacy (encapsulation without classes)
+
+```python
+def make_bank_account(initial):
+    balance = initial
+    def deposit(amount):
+        nonlocal balance
+        balance += amount
+        return balance
+    def get_balance():
+        return balance
+    return deposit, get_balance
+
+deposit, get_balance = make_bank_account(100)
+deposit(50)        # 150
+get_balance()      # 150
+# 'balance' is not accessible from outside — it's private
+```
+
+### 2. Function factories
+
+```python
+def make_multiplier(factor):
+    return lambda x: x * factor
+
+double = make_multiplier(2)
+triple = make_multiplier(3)
+
+double(5)    # 10
+triple(5)    # 15
+```
+
+### 3. Decorators (built on closures)
+
+```python
+def track_calls(fn):
+    def wrapper(*args, **kwargs):
+        wrapper.call_count += 1
+        return fn(*args, **kwargs)
+    wrapper.call_count = 0
+    return wrapper       # closure — remembers 'fn'
+```
+
+`wrapper` is a closure over `fn`. Every decorator you write uses closures.
+
+### 4. Callbacks and event handlers
+
+```python
+def make_handler(button_name):
+    def on_click():
+        print(f"{button_name} was clicked")
+    return on_click
+
+save_handler = make_handler("Save")
+save_handler()   # "Save was clicked"
+```
+
+## Closure vs class
+
+Closures and classes can solve the same problems. Use whichever is simpler:
+
+```python
+# Closure version
+def make_counter():
+    count = 0
+    def increment():
+        nonlocal count
+        count += 1
+        return count
+    return increment
+
+# Class version
+class Counter:
+    def __init__(self):
+        self.count = 0
+    def increment(self):
+        self.count += 1
+        return self.count
+```
+
+Rule of thumb:
+- **One or two functions** with shared state → closure is simpler
+- **Many methods** or complex state → use a class
+
+## Summary
+
+| Concept | Python | JavaScript |
+|---|---|---|
+| Nested function captures outer variable | Yes | Yes |
+| Keyword to reassign outer variable | `nonlocal` | not needed (`let`) |
+| Captures reference, not value | Yes | Yes (same gotcha with loops) |
+| Used in decorators | Yes (`@decorator`) | Yes (HOCs in React, etc.) |
+
+Closures are not a language-specific trick — they are a fundamental concept
+in any language with first-class functions. Once you understand them in one
+language, the pattern transfers everywhere.
+
+---
+
+# Concurrency — Python vs Node.js
+
+## Node.js — Single thread + event loop
+
+```
+Main Thread (the only one)
+  │
+  ├─ your code runs here
+  ├─ callbacks run here
+  ├─ async/await runs here
+  │
+  ↓
+Event Loop (checks: "any I/O finished? any timers done?")
+  │
+  ├─ fs.readFile done?     → run its callback
+  ├─ HTTP response arrived? → run its callback
+  ├─ setTimeout expired?   → run its callback
+  │
+  ↓ repeat forever
+```
+
+**One thread does everything.** When you call `fs.readFile()`, Node hands
+the actual file reading to the OS (or libuv's thread pool), then keeps
+running your code. When the OS finishes, it puts the callback in a queue.
+The event loop picks it up when the main thread is free.
+
+```javascript
+console.log("A");
+setTimeout(() => console.log("B"), 0);
+console.log("C");
+// Output: A, C, B  — "B" waits for the event loop
+```
+
+**The consequence:** If you block the main thread with heavy computation
+(a giant `for` loop), everything stops — no callbacks fire, no requests
+get handled.
+
+```javascript
+// This freezes your entire server
+app.get("/slow", (req, res) => {
+    let sum = 0;
+    for (let i = 0; i < 10_000_000_000; i++) sum += i;  // blocks everything
+    res.send(sum);
+});
+```
+
+**For CPU work**, Node has `worker_threads` — real OS threads, but you
+manage them manually. Most Node developers never use them.
+
+## Python — Three concurrency models
+
+Python gives you three tools. You pick the right one for the job.
+
+### 1. Threading (`threading`) — real threads, fake parallelism
+
+```python
+import threading
+
+def work():
+    print("working")
+
+t = threading.Thread(target=work)
+t.start()     # starts a real OS thread
+t.join()      # wait for it to finish
+```
+
+Python has real OS threads, BUT the **GIL (Global Interpreter Lock)**
+prevents two threads from running Python code at the same time:
+
+```
+Thread 1:  ████░░░░████░░░░████
+Thread 2:  ░░░░████░░░░████░░░░
+                                    ← only one runs at a time
+GIL:       1111222211112222111
+```
+
+**So what's the point?** The GIL releases during I/O operations:
+
+```python
+import threading, requests
+
+# These run truly in parallel — GIL is released during network I/O
+t1 = threading.Thread(target=requests.get, args=("https://api1.com",))
+t2 = threading.Thread(target=requests.get, args=("https://api2.com",))
+t1.start(); t2.start()
+t1.join(); t2.join()
+```
+
+**Good for:** I/O-bound work (HTTP requests, file reads, database queries).
+**Bad for:** CPU-bound work (math, image processing) — GIL blocks real
+parallelism.
+
+### 2. Multiprocessing (`multiprocessing`) — real parallelism
+
+```python
+from multiprocessing import Process
+
+def heavy_math():
+    sum(range(100_000_000))
+
+# Each process has its own Python interpreter and its own GIL
+p1 = Process(target=heavy_math)
+p2 = Process(target=heavy_math)
+p1.start(); p2.start()    # truly parallel on different CPU cores
+p1.join(); p2.join()
+```
+
+```
+Process 1:  ████████████████████  (own GIL, own memory)
+Process 2:  ████████████████████  (own GIL, own memory)
+                                   ← both run simultaneously
+```
+
+**Good for:** CPU-bound work.
+**Bad for:** Sharing data (processes have separate memory — you need
+pipes/queues).
+
+### 3. Asyncio (`asyncio`) — Node.js style, single thread + event loop
+
+```python
+import asyncio
+
+async def fetch(url):
+    print(f"start {url}")
+    await asyncio.sleep(1)     # non-blocking wait (like setTimeout)
+    print(f"done {url}")
+
+async def main():
+    # both run concurrently on one thread
+    await asyncio.gather(
+        fetch("api1"),
+        fetch("api2"),
+    )
+
+asyncio.run(main())
+# start api1
+# start api2
+# (1 second passes)
+# done api1
+# done api2
+```
+
+This is **the same model as Node.js** — one thread, event loop, `await`
+instead of callbacks.
+
+## Side by side
+
+```
+Node.js                          Python
+─────────────────────────────────────────────────────────
+Single-threaded by default       Multi-model: you choose
+
+Event loop + callbacks/await     asyncio = same as Node
+                                 threading = real threads (but GIL)
+                                 multiprocessing = real parallelism
+
+CPU work blocks everything       CPU work → use multiprocessing
+                                 or release GIL (C extensions, NumPy)
+
+worker_threads (rarely used)     threading (commonly used for I/O)
+
+Everything is async by default   Sync by default, async opt-in
+(fs, http, timers)               (you choose sync or async)
+
+npm ecosystem: async-first       Python ecosystem: mixed
+```
+
+## The key difference in philosophy
+
+**Node.js:** "Everything is async. You have one thread. Deal with it."
+Forced simplicity — you can't accidentally share state between threads
+because there's only one.
+
+**Python:** "Here are three tools. Pick the right one."
+
+| Problem | Python tool |
+|---|---|
+| 10,000 HTTP requests | `asyncio` or `threading` |
+| Image processing on 8 cores | `multiprocessing` |
+| Read 50 files from disk | `threading` or `asyncio` |
+| Web server | `asyncio` (FastAPI, aiohttp) |
+| ML training | `multiprocessing` (PyTorch DataLoader uses this) |
+
+## The GIL — will it go away?
+
+Python 3.13 introduced an **experimental** no-GIL mode (`--disable-gil`).
+If it stabilizes, Python threads will get true parallelism like Java or
+C++. But it's not production-ready yet — maybe by 3.15 or 3.16.

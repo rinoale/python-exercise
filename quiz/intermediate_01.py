@@ -29,6 +29,17 @@ def q01_closure_counter():
     Hint: use `nonlocal`.
     """
     # YOUR CODE HERE — define make_counter, then use it
+    def make_counter():
+        count = 0
+        def counter():
+            nonlocal count
+            result = count
+            count += 1
+            return result
+        return counter
+
+    c = make_counter()
+    return (c(), c(), c())
     pass
 
 
@@ -43,8 +54,24 @@ def q02_decorator_timer():
 
     Expected return: 5
     """
-    # YOUR CODE HERE
-    pass
+    def track_calls(fn):
+        def wrapper(*args, **kwargs):
+            wrapper.call_count += 1
+            return fn(*args, **kwargs)
+        wrapper.call_count = 0
+
+        return wrapper
+
+    @track_calls
+    def greet():
+        return "hello"
+    greet()
+    greet()
+    greet()
+    greet()
+    greet()
+
+    return greet.call_count
 
 
 def q03_fibonacci_generator():
@@ -57,8 +84,29 @@ def q03_fibonacci_generator():
 
     Expected: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
     """
-    # YOUR CODE HERE
-    pass
+    # user's original — recursive approach (correct but O(2^n) per call)
+    def fib_recursive():
+        n = 0
+        def fib_internal(i):
+            if i + 1 == 1:
+                return 0
+            elif i + 1 == 2:
+                return 1
+            return fib_internal(i - 1) + fib_internal(i - 2)
+
+        while True:
+            yield fib_internal(n)
+            n += 1
+
+    # correct answer — iterative generator (O(1) per call)
+    def fib():
+        a, b = 0, 1
+        while True:
+            yield a
+            a, b = b, a + b
+
+    g = fib()
+    return [next(g) for _ in range(10)]
 
 
 def q04_context_manager():
@@ -81,8 +129,26 @@ def q04_context_manager():
 
     Return (r1, r2, r3, r4, r5).
     """
-    # YOUR CODE HERE
-    pass
+    class Indenter():
+        def __init__(self):
+            self.current_cursor = 0
+        def __enter__(self):
+            self.current_cursor += 1
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.current_cursor -= 1
+        def print_line(self, line):
+            return f"{' ' * (self.current_cursor * 2)}{line}"
+
+    ind = Indenter()
+    r1 = ind.print_line("top")
+    with ind:
+        r2 = ind.print_line("child")
+        with ind:
+            r3 = ind.print_line("grandchild")
+        r4 = ind.print_line("child again")
+    r5 = ind.print_line("top again")
+
+    return (r1, r2, r3, r4, r5)
 
 
 # ============================================================

@@ -116,8 +116,9 @@ def q07_count_words_good():
     Return the same result type (a dict-like mapping of word -> count).
     """
     text = "the cat sat on the mat the cat"
-    # YOUR CODE HERE (one or two lines)
     pass
+    from collections import Counter
+    return Counter(text.split())
 
 
 def q08_check_all_positive_bad():
@@ -137,8 +138,8 @@ def q08_check_all_positive_good():
     Rewrite q08 in one line using a built-in function.
     """
     nums = [3, 7, 1, 9, 4]
-    # YOUR CODE HERE
     pass
+    return all(i > 0 for i in nums)
 
 
 # ============================================================
@@ -152,8 +153,15 @@ def q09_singleton():
 
     Return True if `MyClass() is MyClass()` (identity check).
     """
-    # YOUR CODE HERE — define MyClass inside this function
+    class MyClass():
+        _instance = None
+
+        def __new__(cls):
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+            return cls._instance
     pass
+    return MyClass() is MyClass()
 
 
 def q10_strategy_pattern():
@@ -171,8 +179,14 @@ def q10_strategy_pattern():
     You can use lambdas or regular functions for the operations.
     Return (r1, r2, r3).
     """
-    # YOUR CODE HERE
+    def apply_operation(l, r, fn):
+        return fn(l,r)
+
+    r1 = apply_operation(10, 3, lambda l,r: l + r)
+    r2 = apply_operation(10, 3, lambda l,r: l - r)
+    r3 = apply_operation(10, 3, lambda l,r: l * r)
     pass
+    return (r1, r2, r3)
 
 
 # ============================================================
@@ -191,8 +205,25 @@ def q11_two_sum():
     """
     nums = [2, 7, 11, 15]
     target = 9
-    # YOUR CODE HERE
+    dict_pair = {i: target - i for i in nums}
     pass
+    result = None
+    for i in nums:
+        r = dict_pair.get(i)
+        if r and dict_pair.get(r):
+            result = (nums.index(i), nums.index(r))
+            break
+    return result
+
+def q11_two_sum_good():
+    nums = [2, 7, 11, 15]
+    target = 9
+    seen = {}
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return (seen[complement], i)
+        seen[num] = i
 
 
 def q12_reverse_string_in_place():
@@ -203,8 +234,22 @@ def q12_reverse_string_in_place():
     Hint: use two pointers (left, right) swapping towards the center.
     """
     chars = list("hello")
-    # YOUR CODE HERE
+    for i, char in enumerate(chars):
+        if i > len(chars) / 2:
+            break
+        j = len(chars) - 1 - i
+        chars[i], chars[j] = chars[j], chars[i]
+    return chars
     pass
+
+def q12_reverse_string_in_place_good():
+    chars = list("hello")
+    left, right = 0, len(chars) - 1
+    while left < right:
+        chars[left], chars[right] = chars[right], chars[left]
+        left += 1
+        right -= 1
+    return chars
 
 
 # ============================================================

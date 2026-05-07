@@ -173,8 +173,16 @@ def q05_flatten_good():
     Return a list with the same contents.
     """
     nested = [[1, 2], [3, 4], [5, 6, 7]]
-    # YOUR CODE HERE
-    pass
+    def flatten(iter):
+        for arr in iter:
+            yield from arr
+
+    return list(flatten(nested))
+
+def q05_flatten_answer():
+    from itertools import chain
+    nested = [[1, 2], [3, 4], [5, 6, 7]]
+    return list(chain.from_iterable(nested))
 
 
 def q06_group_by_bad():
@@ -196,8 +204,10 @@ def q06_group_by_good():
     Rewrite using collections.defaultdict. Return a regular dict at the end.
     """
     words = ["apple", "avocado", "banana", "blueberry", "cherry"]
-    # YOUR CODE HERE
-    pass
+    from collections import defaultdict
+    groups = defaultdict(list)
+    for word in words: groups[word[0]].append(word)
+    return groups
 
 
 # ============================================================
@@ -221,8 +231,41 @@ def q07_observer_pattern():
 
     Return log  ->  ["user Alice logged in", "welcome Alice"]
     """
-    # YOUR CODE HERE
-    pass
+    from collections import defaultdict
+
+    # user's original — works but defaultdict(dict) + `or []` was fragile
+    class EventBusOriginal:
+        def __init__(self):
+            self.event_map = defaultdict(dict)
+
+        def subscribe(self, event_name, callback):
+            event_callbacks = self.event_map[event_name] or []
+            event_callbacks.append(callback)
+            self.event_map[event_name] = event_callbacks
+
+        def emit(self, event_name, name):
+            for callback in self.event_map[event_name]:
+                callback(name)
+
+    # correct answer — defaultdict(list) eliminates the workaround
+    class EventBus:
+        def __init__(self):
+            self.event_map = defaultdict(list)
+
+        def subscribe(self, event_name, callback):
+            self.event_map[event_name].append(callback)
+
+        def emit(self, event_name, data):
+            for callback in self.event_map[event_name]:
+                callback(data)
+
+    bus = EventBus()
+    log = []
+    bus.subscribe("login", lambda data: log.append(f"user {data} logged in"))
+    bus.subscribe("login", lambda data: log.append(f"welcome {data}"))
+    bus.emit("login", "Alice")
+
+    return log
 
 
 def q08_decorator_pattern():
@@ -237,8 +280,62 @@ def q08_decorator_pattern():
     Chain them:  Brackets(UpperCase(PlainText("hello")))
     Return the result of get_text()  ->  "[HELLO]"
     """
-    # YOUR CODE HERE
-    pass
+    # user's original — two bugs: missing self. and returns object instead of text
+    class TextSourceOriginal:
+        def get_text(self) -> str:
+            pass
+
+    class PlainTextOriginal(TextSourceOriginal):
+        def __init__(self, text):
+            self.text = text
+
+        def get_text(self):
+            return self.text
+
+    class UpperCaseOriginal(TextSourceOriginal):
+        def __init__(self, source):
+            self.source = source
+
+        def get_text(self):
+            return source.get_text().upper()       # bug: source → self.source
+
+    class BracketsOriginal(TextSourceOriginal):
+        def __init__(self, source):
+            self.source = source
+
+        def get_text(self):
+            return f"[{source.get_text()}]"        # bug: source → self.source
+
+    # return Brackets(UpperCase(PlainText("hello")))  # bug: missing .get_text()
+
+    # correct answer — proper Decorator pattern with shared TextDecorator base
+    class TextSource:
+        def get_text(self) -> str:
+            pass
+
+    class PlainText(TextSource):
+        def __init__(self, text):
+            self.text = text
+
+        def get_text(self):
+            return self.text
+
+    class TextDecorator(TextSource):
+        def __init__(self, source):
+            self.source = source
+
+        def get_text(self):
+            return self.source.get_text()
+
+    class UpperCase(TextDecorator):
+        def get_text(self):
+            return self.source.get_text().upper()
+
+    class Brackets(TextDecorator):
+        def get_text(self):
+            return f"[{self.source.get_text()}]"
+
+    return Brackets(UpperCase(PlainText("hello"))).get_text()
 
 
 # ============================================================

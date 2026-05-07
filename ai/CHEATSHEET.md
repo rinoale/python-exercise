@@ -310,6 +310,80 @@ Each entry: **what** it is, **why** we use it, **how** it works, and **where** t
 
 ---
 
+## Choosing the Right Algorithm: "How do I find similar things?"
+
+Many algorithms measure "similarity" but they're different tools for different jobs.
+The **dot product** is the common thread — most similarity methods are built on it.
+
+### Decision Flowchart
+
+```
+What's your task?
+  |
+  |-- "Group similar things together" (no labels)
+  |     -> Clustering: K-Means, DBSCAN
+  |     -> Similarity: Euclidean distance between data points
+  |
+  |-- "Which category does this belong to?" (has labels)
+  |     -> KNN: find K nearest neighbors, majority vote
+  |     -> Decision Tree / Random Forest: learn yes/no rules
+  |     -> Logistic Regression: learn a dividing line
+  |
+  |-- "Find similar documents/sentences" (search)
+  |     -> Embedding + Cosine similarity / Dot product
+  |     -> Used in: RAG retrieval, recommendation, search
+  |
+  |-- "Which words in a sentence matter for THIS word?" (context)
+  |     -> Attention (Q, K, V): dot product between token vectors
+  |     -> Used in: Transformers, LLMs
+```
+
+### How each algorithm measures similarity
+
+| Algorithm | Similarity method | Input type | What for | Reference |
+|-----------|------------------|------------|----------|-----------|
+| **K-Means** | Euclidean distance (straight line between points) | Structured data (tables) | Group unlabeled data into clusters | `08_clustering.py` |
+| **DBSCAN** | Euclidean distance (density of nearby points) | Structured data | Find clusters of any shape, detect outliers | `08_clustering.py` |
+| **KNN** | Euclidean distance to K nearest labeled points | Structured data | Classify: "3 of 5 nearest neighbors are cat -> cat" | `05_classification.py` |
+| **Decision Tree** | Gini impurity (how mixed is each group after split?) | Structured data | Classify by learning if/else rules | `07_trees_and_forests.py` |
+| **Random Forest** | Same as tree, but many trees vote | Structured data | More accurate classification, less overfitting | `07_trees_and_forests.py` |
+| **Cosine similarity** | Angle between two vectors (ignores magnitude) | Embedding vectors | "Is this sentence similar to that one?" | `jupyter/cores/dot_product.ipynb`, `jupyter/RAG/embedding_training.ipynb` |
+| **Dot product** | Multiply matching pairs and sum | Vectors | Raw similarity score (considers magnitude) | `jupyter/cores/dot_product.ipynb` |
+| **Attention (QKV)** | Dot product of Q and K, softmax, weighted sum of V | Token embeddings | "Which other tokens should I attend to?" | `jupyter/cores/attention_qkv.ipynb`, `TRANSFORMER.md` |
+
+### Three worlds of similarity
+
+**Structured data** (tables with columns like age, height, income):
+- Algorithms: K-Means, KNN, Decision Tree, Random Forest
+- Distance: Euclidean (straight line between points)
+- Example: find 5 nearest patients in database, check their diagnosis
+
+**Embedding vectors** (learned representations of text/images):
+- Algorithms: Cosine similarity, dot product
+- Distance: angle between vectors in high-dimensional space
+- Example: "king" and "queen" have cosine similarity 0.95
+
+**Inside a neural network** (attention mechanism):
+- Algorithm: Scaled dot product attention
+- Distance: Q @ K^T / sqrt(d_k)
+- Example: in "The cat sat because it was tired", "it" attends to "cat"
+
+### They're not interchangeable
+
+You don't choose between KNN and Attention for the same problem. The task determines the category:
+
+| If you need to... | Use | NOT |
+|---|---|---|
+| Group customer segments | K-Means | Attention |
+| Classify spam vs. not-spam | Tree / Forest / KNN | Cosine similarity |
+| Search similar documents | Embedding + Cosine | K-Means |
+| Build a language model | Attention (QKV) | Random Forest |
+| Recommend similar products | Embedding + Cosine OR KNN | Decision Tree |
+
+The last row shows where they CAN overlap: recommendation can use either embedding similarity (learned vectors) or KNN (structured features). The choice depends on your data format.
+
+---
+
 ## Quick Lookup: "I want to understand X"
 
 | If you want to understand... | Start here |

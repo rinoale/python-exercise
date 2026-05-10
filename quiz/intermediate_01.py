@@ -360,8 +360,35 @@ def q09_valid_parentheses():
 
     Expected return: (True, True, False, False, True)
     """
-    # YOUR CODE HERE — write a helper function, then test all cases
-    pass
+    # user's original — works for given cases but crashes on leading close bracket
+    def parentheses_validator_original(input_str):
+        paren_pair = { ")": "(", "}": "{", "]": "[" }
+        open_arr = []
+        for ch in input_str:
+            try:
+                if ch in paren_pair.values():
+                    open_arr.append(ch)
+                else:
+                    if open_arr[len(open_arr) - 1] != paren_pair[ch]:
+                        raise ValueError
+                    open_arr.pop()
+            except ValueError:
+                return False
+
+        return len(open_arr) == 0
+
+    # correct answer — handles empty-stack edge case, no try/except needed
+    def parentheses_validator(s):
+        pair = {")": "(", "}": "{", "]": "["}
+        stack = []
+        for ch in s:
+            if ch in pair.values():
+                stack.append(ch)
+            elif not stack or stack.pop() != pair[ch]:
+                return False
+        return len(stack) == 0
+
+    return (parentheses_validator("()"), parentheses_validator("()[]{}"), parentheses_validator("(]"), parentheses_validator("([)]"), parentheses_validator("{[]}"))
 
 
 def q10_merge_sort():
